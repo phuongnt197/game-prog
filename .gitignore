@@ -1,0 +1,47 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# AIP1 Studio runtime data
+data/*.sqlite3
+data/*.sqlite3-*
+data/*.db
+data/*.db-*
+data/projects/
+
+# Logs and temporary output
+*.log
+logs/
+tmp/
+temp/
+
+# Node/browser tooling caches, if used later
+node_modules/
+.vite/
+dist/
+build/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
