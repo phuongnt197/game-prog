@@ -1,4 +1,4 @@
-from studio.server_v2 import main
+from aip1_studio.api.main import main
 
 
 if __name__ == "__main__":
