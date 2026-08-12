@@ -25,6 +25,7 @@ data/*.sqlite3-*
 data/*.db
 data/*.db-*
 data/projects/
+data/ai_education/
 
 # Logs and temporary output
 *.log
