@@ -1,40 +1,52 @@
 # Game-based Programming Environment
 
-## Current Status
+AIP1 Studio uses a React/Vite frontend and a modular FastAPI backend. SQLite stores users, progress, and AI learning problems. Judge0 executes server-validated Python, the Pacman page uses Pyodide in a browser worker, and the AI Education page uses Manim Community to render generated concept videos.
 
-The repository now contains a working local web app for an introductory Python learning environment:
+## First-time setup
 
-- A beginner programming roadmap with locked/unlocked assignments, starter code, visual grid missions, run/submit checks, autosaved drafts, and progress tracking.
-- A SQLite-backed user system with student registration, admin-created users, sessions, password changes, and role-based access.
-- An admin view for checking student progress, recent submissions, behavior indicators, manual unlocks, and password resets.
-- A Pacman agent prototype embedded into the main app and also available as a standalone browser demo.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 
-## How to Run
+cd pacman-python-website
+npm install
+npm run build
+cd ..
+```
 
-From the repository root:
+Manim on Linux also requires Cairo and Pango development libraries. On Debian/Ubuntu, install them before the Python requirements:
+
+```bash
+sudo apt install build-essential python3-dev libcairo2-dev libpango1.0-dev
+```
+
+Generated lesson videos are stored under `data/ai_education/`. Each user keeps their five most recent renders. The renderer timeout can be configured with `MANIM_RENDER_TIMEOUT` (120 seconds by default).
+
+## Run production locally
 
 ```bash
 python app.py
 ```
 
-Then open:
+Open `http://localhost:8002`. FastAPI documentation is available at `http://localhost:8002/docs`.
 
-```text
-http://localhost:8001
+Configuration:
+
+```bash
+AIP1_HOST=127.0.0.1 AIP1_PORT=8002 python app.py
 ```
 
-The server listens on `0.0.0.0:8001` by default. Runtime data is created under `data/`, including the SQLite database.
+## Frontend development
 
-## Default Login
+If you wish to develop the frontend, first, run FastAPI, then in a second terminal:
 
-On the first run, the app creates one admin account:
-
-```text
-username: admin
-password: admin123
+```bash
+cd pacman-python-website
+npm run dev
 ```
 
-The default admin password should be changed after login. Students can also self-register from the login screen.
+Open `http://localhost:5173`. Vite proxies `/api` to `http://127.0.0.1:8002`.
 
 ## Main User Flows
 
@@ -44,29 +56,34 @@ The default admin password should be changed after login. Students can also self
 4. Use the **Admin** tab, when logged in as an admin, to monitor progress and unlock assignments manually.
 5. Use **Pacman Agent** to open the separate Pacman logic prototype.
 
-## Important Files
+## Structure
 
 ```text
-app.py                         Main entry point; starts server_v2
-studio/server_v2.py       Current HTTP server, routes, auth, assignments, admin, studio, Pacman mount
-studio/db.py              SQLite schema, users, sessions, progress, submissions, behavior logs, projects
-studio/assignments.py     Roadmap assignment definitions and grid-agent grading harness
-studio/harness.py         Project Studio run/test harness for Judge0
-studio/judge0.py          Judge0 client
-studio/llm.py             OpenAI-compatible AI helper client
-studio/templates.py       Project Studio starter templates
-studio/config.py          Environment variables and default service settings
-static/                        Main AIP1 Studio frontend
-pacman-python-website/         Standalone Pacman/Pyodide prototype
+aip1_studio/api/          FastAPI app, dependencies, schemas, routers
+aip1_studio/services/     Judge0 and evaluation orchestration
+aip1_studio/db.py         SQLite persistence
+pacman-python-website/    Unified React/Vite frontend
+tests/                    Backend and evaluation tests
 ```
+
+## Pacman student API
+
+Pacman is the course project. Students design a validated custom maze and implement one plain Python function—no classes are required:
+
+```python
+def choose_action(pacman, food, ghosts, walls, legal_actions):
+    return "STOP"
+```
+
+Positions are `(x, y)` tuples, and collections are lists of tuples. The browser provides `move`, `manhattan_distance`, `nearest_food`, and `legal_neighbors` helper functions. Evaluation requires a win and target score on two starter maps and the student's custom map.
 
 ## Configuration
 
 The app uses these environment variables when needed:
 
 ```text
-AIP1_HOST              default: 0.0.0.0
-AIP1_PORT              default: 8001
+AIP1_HOST              default: localhost
+AIP1_PORT              default: 8002
 AIP1_DB_PATH           default: data/studio.sqlite3
 AIP1_ADMIN_USERNAME    default: admin
 AIP1_ADMIN_PASSWORD    default: admin123
@@ -76,6 +93,5 @@ JUDGE0_LANGUAGE_ID     default: 33
 OPENAI_BASE_URL        default: http://<URL>
 OPENAI_MODEL           default: Qwen/Qwen3.6-35B-A3B
 OPENAI_API_KEY         default: EMPTY
+MANIM_RENDER_TIMEOUT   default: 120
 ```
-
-JUDGE0 and OPENAI currently are not being used.
