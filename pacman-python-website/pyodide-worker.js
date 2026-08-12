@@ -18,57 +18,35 @@ DIRECTIONS = {
     "STOP": (0, 0),
 }
 
-class State:
-    def __init__(self, data):
-        self.pacman = tuple(data.get("pacman", (0, 0)))
-        self.food = [tuple(pos) for pos in data.get("food", [])]
-        self.ghosts = [tuple(pos) for pos in data.get("ghosts", [])]
-        self.walls = set(tuple(pos) for pos in data.get("walls", []))
-        self.legal_actions = list(data.get("legal_actions", []))
-        self.score = int(data.get("score", 0))
-        self.lives = int(data.get("lives", 0))
-        self.steps = int(data.get("steps", 0))
-        self.width = int(data.get("width", 0))
-        self.height = int(data.get("height", 0))
 
-    def next_position(self, pos, action):
-        return next_position(pos, action)
-
-    def is_wall(self, pos):
-        return tuple(pos) in self.walls
-
-    def in_bounds(self, pos):
-        x, y = pos
-        return 0 <= x < self.width and 0 <= y < self.height
-
-    def legal_neighbors(self, pos):
-        result = []
-        for action in ["UP", "DOWN", "LEFT", "RIGHT"]:
-            nxt = next_position(pos, action)
-            if self.in_bounds(nxt) and not self.is_wall(nxt):
-                result.append((action, nxt))
-        return result
-
-
-def make_state(data):
-    return State(data)
-
-
-def next_position(pos, action):
+def move(position, action):
     action = str(action).upper()
     dx, dy = DIRECTIONS.get(action, (0, 0))
-    x, y = pos
+    x, y = position
     return (x + dx, y + dy)
+
+
+def next_position(position, action):
+    return move(position, action)
 
 
 def manhattan_distance(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 
-def nearest_food(state):
-    if not state.food:
+def nearest_food(pacman, food):
+    if not food:
         return None
-    return min(state.food, key=lambda food: manhattan_distance(state.pacman, food))
+    return min(food, key=lambda pellet: manhattan_distance(pacman, pellet))
+
+
+def legal_neighbors(position, walls):
+    result = []
+    for action in ["UP", "DOWN", "LEFT", "RIGHT"]:
+        neighbor = move(position, action)
+        if neighbor not in walls:
+            result.append((action, neighbor))
+    return result
 `;
 
 let pyodidePromise = null;
@@ -103,7 +81,7 @@ async function loadStudentCode(id, code) {
   py.globals.set("student_code", code);
 
   const resultJson = await py.runPythonAsync(`
-import json, sys, io, traceback
+import inspect, json, sys, io, traceback
 _stdout = io.StringIO()
 _old_stdout = sys.stdout
 sys.stdout = _stdout
@@ -112,9 +90,13 @@ try:
     exec(support_code, student_ns)
     exec(student_code, student_ns)
     if "choose_action" not in student_ns:
-        raise Exception("Define choose_action(state).")
+        raise Exception("Define choose_action(pacman, food, ghosts, walls, legal_actions).")
     if not callable(student_ns["choose_action"]):
         raise Exception("choose_action must be a function.")
+    try:
+        inspect.signature(student_ns["choose_action"]).bind((1, 1), [], [], [], ["STOP"])
+    except TypeError:
+        raise Exception("choose_action must accept these five inputs: pacman, food, ghosts, walls, legal_actions.")
     globals()["student_ns"] = student_ns
     _result = {"ok": True, "stdout": _stdout.getvalue()}
 except Exception:
@@ -146,8 +128,13 @@ sys.stdout = _stdout
 try:
     if "student_ns" not in globals():
         raise Exception("Student code has not been loaded.")
-    state = student_ns["make_state"](json.loads(state_json))
-    action = student_ns["choose_action"](state)
+    data = json.loads(state_json)
+    pacman = tuple(data.get("pacman", (0, 0)))
+    food = [tuple(position) for position in data.get("food", [])]
+    ghosts = [tuple(position) for position in data.get("ghosts", [])]
+    walls = [tuple(position) for position in data.get("walls", [])]
+    legal_actions = list(data.get("legal_actions", []))
+    action = student_ns["choose_action"](pacman, food, ghosts, walls, legal_actions)
     _result = {"ok": True, "action": str(action).upper(), "stdout": _stdout.getvalue()}
 except Exception:
     _result = {"ok": False, "action": "STOP", "stdout": _stdout.getvalue(), "error": traceback.format_exc()}

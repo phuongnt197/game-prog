@@ -1,78 +1,43 @@
-# Pacman Logic Lab — Pyodide Browser Demo
+# AIP1 Studio React Frontend
 
-This is a minimal prototype for a course website where students write Python logic and immediately see Pacman move in a rendered UI.
+This is the single frontend for AIP1 Studio. It contains Learning Fundamentals, Test AI Code, AI Copilot, AI Education, Pacman Agent, Showcase, Admin, and Account pages.
 
-## What this demo shows
+## Development
 
-- The student writes only `choose_action(state)`.
-- Pyodide runs the student Python inside a Web Worker.
-- JavaScript owns the game engine, rules, collision detection, score, ghosts, and rendering.
-- Canvas renders the Pacman UI.
-- The game loop repeatedly asks Python for one action, then JavaScript applies it.
+Start FastAPI from the repository root:
 
-## Run locally
+```bash
+source .venv/bin/activate
+python app.py
+```
 
-Do not open `index.html` directly with `file://`. Use a local web server so the browser can load the worker correctly.
+Then start Vite in another terminal:
 
 ```bash
 cd pacman-python-website
-python3 -m http.server 8000
+npm install
+npm run dev
 ```
 
-Then open:
+Vite serves the frontend on `http://localhost:5173` and proxies `/api` to FastAPI on port `8002`.
 
-```text
-http://localhost:8000
+## Production
+
+```bash
+cd pacman-python-website
+npm run build
+cd ..
+source .venv/bin/activate
+python app.py
 ```
 
-The first load may take a few seconds because Pyodide is downloaded from the CDN.
+FastAPI serves the compiled React application and API together on `http://localhost:8002`.
 
-## Files
+## Verification
 
-```text
-index.html          Page layout
-styles.css          Styling
-app.js              Pacman engine, renderer, game loop, UI controls
-pyodide-worker.js   Python runtime worker that loads and executes student code
-README.md           This file
+```bash
+cd pacman-python-website && npm test && npm run build
+cd .. && .venv/bin/python -m unittest discover -s tests -v
 ```
 
-## Student API
-
-Students receive a `state` object with:
-
-```python
-state.pacman          # (x, y)
-state.food            # list[(x, y)]
-state.ghosts          # list[(x, y)]
-state.walls           # set[(x, y)]
-state.legal_actions   # list[str]
-state.score           # int
-state.lives           # int
-state.steps           # int
-state.width           # int
-state.height          # int
-```
-
-Helpers available to students:
-
-```python
-manhattan_distance(a, b)
-state.next_position(pos, action)
-state.is_wall(pos)
-state.legal_neighbors(pos)
-nearest_food(state)
-```
-
-## Important production notes
-
-This demo is intended for local testing and architecture validation. For a real course platform, add:
-
-- user login and saved submissions
-- server-side authoritative grading
-- hidden maps
-- replay storage
-- stronger timeout/interrupt handling
-- anti-tampering checks
-- code version history
-- structured rubric results
+Pyodide runs the function-based Pacman bot in a browser Web Worker. Judge0 remains responsible for server-side assignment and bug-lab execution.
